@@ -1,0 +1,16 @@
+#!/bin/sh
+echo "$1"
+
+if ["$1" == "production"];
+then
+	echo "Production Env"
+        yml="production.yml"
+else
+	echo "Local Env"
+        yml="local.yml"
+fi
+
+echo "Running in $yml enviroment"
+docker-compose -f $yml down
+docker-compose -f $yml up -d
+

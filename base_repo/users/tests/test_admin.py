@@ -1,4 +1,5 @@
 import pytest
+import unittest
 from django.urls import reverse
 
 from base_repo.users.models import User
@@ -6,7 +7,7 @@ from base_repo.users.models import User
 pytestmark = pytest.mark.django_db
 
 
-class TestUserAdmin:
+class TestUserAdmin(unittest.TestCase):
     def test_changelist(self, admin_client):
         url = reverse("admin:users_user_changelist")
         response = admin_client.get(url)

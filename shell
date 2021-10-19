@@ -1,0 +1,16 @@
+#!/bin/sh
+echo "$1"
+
+if ["$1" == "production"];
+then
+	echo "Production Env"
+        yml="production.yml"
+else
+	echo "Local Env"
+        yml="local.yml"
+fi
+
+echo "Opening shell in $yml enviroment"
+docker-compose -f $yml run --rm django python manage.py shell
+
+

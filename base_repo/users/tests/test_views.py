@@ -1,4 +1,5 @@
 import pytest
+import unittest
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import AnonymousUser
@@ -20,7 +21,7 @@ from base_repo.users.views import (
 pytestmark = pytest.mark.django_db
 
 
-class TestUserUpdateView:
+class TestUserUpdateView(unittest.TestCase):
     """
     TODO:
         extracting view initialization code as class-scoped fixture
@@ -29,35 +30,39 @@ class TestUserUpdateView:
         https://github.com/pytest-dev/pytest-django/pull/258
     """
 
+    def setUp(self):
+        self.user = UserFactory()
+        self.rf = RequestFactory()
+        return super().setUp()
+
     def dummy_get_response(self, request: HttpRequest):
         return None
 
-    def test_get_success_url(self, user: User, rf: RequestFactory):
+    def test_get_success_url(self):
         view = UserUpdateView()
-        request = rf.get("/fake-url/")
-        request.user = user
+        request = self.rf.get("/fake-url/")
+        request.user = self.user
+
+        view.request = request
+        assert view.get_success_url() == f"/users/{self.user.username}/"
+
+    def test_get_object(self):
+        view = UserUpdateView()
+        request = self.rf.get("/fake-url/")
+        request.user = self.user
 
         view.request = request
 
-        assert view.get_success_url() == f"/users/{user.username}/"
+        assert view.get_object() == self.user
 
-    def test_get_object(self, user: User, rf: RequestFactory):
+    def test_form_valid(self):
         view = UserUpdateView()
-        request = rf.get("/fake-url/")
-        request.user = user
-
-        view.request = request
-
-        assert view.get_object() == user
-
-    def test_form_valid(self, user: User, rf: RequestFactory):
-        view = UserUpdateView()
-        request = rf.get("/fake-url/")
+        request = self.rf.get("/fake-url/")
 
         # Add the session/message middleware to the request
         SessionMiddleware(self.dummy_get_response).process_request(request)
         MessageMiddleware(self.dummy_get_response).process_request(request)
-        request.user = user
+        request.user = self.user
 
         view.request = request
 
@@ -70,29 +75,40 @@ class TestUserUpdateView:
         assert messages_sent == ["Information successfully updated"]
 
 
-class TestUserRedirectView:
-    def test_get_redirect_url(self, user: User, rf: RequestFactory):
+class TestUserRedirectView(unittest.TestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.rf = RequestFactory()
+        return super().setUp()
+
+    def test_get_redirect_url(self):
         view = UserRedirectView()
-        request = rf.get("/fake-url")
-        request.user = user
+        request = self.rf.get("/fake-url")
+        request.user = self.user
 
         view.request = request
 
-        assert view.get_redirect_url() == f"/users/{user.username}/"
+        assert view.get_redirect_url() == f"/users/{self.user.username}/"
 
 
-class TestUserDetailView:
-    def test_authenticated(self, user: User, rf: RequestFactory):
-        request = rf.get("/fake-url/")
-        request.user = UserFactory()
+class TestUserDetailView(unittest.TestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.rf = RequestFactory()
+        return super().setUp()
 
-        response = user_detail_view(request, username=user.username)
+    def test_authenticated(self):
+        request = self.rf.get("/fake-url/")
+        request.user = self.user
+
+        response = user_detail_view(request, username=self.user.username)
 
         assert response.status_code == 200
 
-    def test_not_authenticated(self, user: User, rf: RequestFactory):
-        request = rf.get("/fake-url/")
-        request.user = AnonymousUser()
+    def test_not_authenticated(self):
+        user = AnonymousUser()
+        request = self.rf.get("/fake-url/")
+        request.user = user
 
         response = user_detail_view(request, username=user.username)
         login_url = reverse(settings.LOGIN_URL)

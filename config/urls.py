@@ -5,6 +5,8 @@ from django.urls import include, path
 from django.views import defaults as default_views
 from django.views.generic import TemplateView
 from rest_framework.authtoken.views import obtain_auth_token
+from rest_framework_swagger.views import get_swagger_view
+from rest_framework.schemas import get_schema_view
 
 urlpatterns = [
     path("", TemplateView.as_view(template_name="pages/home.html"), name="home"),
@@ -26,6 +28,26 @@ urlpatterns += [
     # DRF auth token
     path("auth-token/", obtain_auth_token),
 ]
+
+def trigger_error(request):
+    division_by_zero = 1 / 0
+
+urlpatterns += [
+    path('sentry-debug/', trigger_error),
+    # ...
+]
+
+schema_view = get_swagger_view(title='Pastebin API')
+
+urlpatterns += [
+    path("api/", schema_view),
+    path('openapi', get_schema_view(
+        title="Your Project",
+        description="API for all things …"
+    ), name='openapi-schema'),
+
+]
+
 
 if settings.DEBUG:
     # This allows the error pages to be debugged during development, just visit
